@@ -72,14 +72,14 @@ def reduce_volume(input_wav, output_wav, db_change):
     # Convert the byte data to numpy array for processing
     if sampwidth == 1:  # 8-bit audio (unsigned)
         dtype = np.uint8
-        audio_data = np.frombuffer(audio_frames, dtype=dtype)
-        audio_data = audio_data - 128  # Convert to signed
+        audio_data = np.frombuffer(audio_frames, dtype=dtype).astype(np.float32)
+        audio_data -= 128  # Convert to signed
     elif sampwidth == 2:  # 16-bit audio (signed)
         dtype = np.int16
-        audio_data = np.frombuffer(audio_frames, dtype=dtype)
+        audio_data = np.frombuffer(audio_frames, dtype=dtype).astype(np.float32)
     elif sampwidth == 4:  # 32-bit audio (signed)
         dtype = np.int32
-        audio_data = np.frombuffer(audio_frames, dtype=dtype)
+        audio_data = np.frombuffer(audio_frames, dtype=dtype).astype(np.float32)
     else:
         raise ValueError(f"Unsupported sample width: {sampwidth}")
     
@@ -87,11 +87,19 @@ def reduce_volume(input_wav, output_wav, db_change):
     volume_change_factor = 10 ** (db_change / 20)
     
     # Apply volume change
-    audio_data = (audio_data * volume_change_factor).astype(dtype)
+    audio_data *= volume_change_factor
+    
+    # Clamp values to prevent clipping
+    max_val = 2 ** (8 * sampwidth - 1) - 1
+    min_val = -max_val - 1
+    audio_data = np.clip(audio_data, min_val, max_val)
+    
+    # Convert back to the original integer type
+    audio_data = audio_data.astype(dtype)
     
     # Convert back to original byte format
     if sampwidth == 1:
-        audio_data = audio_data + 128  # Convert back to unsigned 8-bit
+        audio_data += 128  # Convert back to unsigned 8-bit
     new_frames = audio_data.tobytes()
     
     # Replace the 'data' chunk with the modified frames
