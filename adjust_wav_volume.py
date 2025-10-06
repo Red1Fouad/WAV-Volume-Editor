@@ -136,7 +136,7 @@ def process_wav_files_in_directory():
         return
 
     # If amplifying, the dB amount should be negative (to increase volume)
-    if action == "a":
+    if action == "r":
         db_amount = -db_amount  # Negative value to amplify the volume
     
     # Get the current directory (where the script is located)
@@ -164,4 +164,5 @@ def process_wav_files_in_directory():
 
 # Run the processing function
 process_wav_files_in_directory()
+
 
