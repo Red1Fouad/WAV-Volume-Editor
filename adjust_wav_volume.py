@@ -21,12 +21,21 @@ def read_wav_chunks(file):
     pos = 12
     chunks = {}
     
-    while pos < len(data):
-        chunk_id = data[pos:pos+4].decode('ascii')
+    while pos + 8 <= len(data):  # need at least 8 bytes for header
+        chunk_id = data[pos:pos+4].decode('ascii', errors="replace")
         chunk_size = struct.unpack('<I', data[pos+4:pos+8])[0]
-        chunk_data = data[pos+8:pos+8+chunk_size]
+        
+        start = pos + 8
+        end = start + chunk_size
+        if end > len(data):
+            break  # avoid reading past EOF
+        
+        chunk_data = data[start:end]
         chunks[chunk_id] = chunk_data
-        pos += 8 + chunk_size
+        
+        pos = end
+        if chunk_size % 2 == 1:  # padding byte
+            pos += 1
     
     return chunks, file_size
 
@@ -155,3 +164,4 @@ def process_wav_files_in_directory():
 
 # Run the processing function
 process_wav_files_in_directory()
+
